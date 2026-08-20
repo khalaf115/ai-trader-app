@@ -10,7 +10,7 @@ import pytz
 st.set_page_config(page_title="AI Trader Pro v3", page_icon="🧠", layout="wide")
 
 PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD"]
-INTERVALS = {"1 min": "1min", "5 min": "5min", "15 min": "15min", "30 min": "30min", "1 hour": "1h"}
+INTERVALS = {"1 min": "1min", "5 min": "5min", "15 min": "15min", "30 min": "30min", "1 hour": "1h", "M1": "1min", "M5": "5min", "M15": "15min", "M30": "30min", "H1": "1h"}
 TF_LABELS = list(INTERVALS.keys())
 TF_MAP = INTERVALS
 
@@ -143,7 +143,7 @@ class AIEngine:
         if patterns.get('Bullish Engulfing') or patterns.get('Hammer'): score += 8; factors['candle'] = 1; reasons.append("Bullish candle pattern")
         elif patterns.get('Bearish Engulfing') or patterns.get('Shooting Star'): score -= 8; factors['candle'] = -1; reasons.append("Bearish candle pattern")
         else: factors['candle'] = 0
-        factors['mtf'] = 0 # simplified
+        factors['mtf'] = 0
         score = float(np.clip(score, 0, 100))
         if score >= 65: signal = "CALL"; direction = "Bullish"
         elif score <= 35: signal = "PUT"; direction = "Bearish"
@@ -284,6 +284,7 @@ def main():
         df_hist['timestamp'] = pd.to_datetime(df_hist['timestamp'])
         df_hist = df_hist.sort_values('timestamp')
         df_hist['win_int'] = df_hist['win'].astype(int)
+        # ✅ هذا السطر الصحيح الذي يمنع ظهور الأخطاء
         df_hist['rolling_win'] = df_hist['win_int'].rolling(20, min_periods=1).mean() * 100
         st.line_chart(df_hist.set_index('timestamp')[['rolling_win']], height=200)
     if hist.history: st.dataframe(pd.DataFrame(hist.history).tail(20), use_container_width=True)
@@ -296,7 +297,8 @@ def main():
             if len(df_tf) > 50:
                 eng = AIEngine(df_tf, pair, tf); res = eng.analyze()
                 mt_data[tf] = {"Signal": res['signal'], "Confidence": res['confidence'], "Score": round(res['score'], 1), "RSI": round(res['rsi'], 1), "Direction": res['direction']}
-        except: mt_data[tf] = {"Signal": "Error", "Confidence": 0}
+        except Exception as e:
+            mt_data[tf] = {"Signal": "Error", "Confidence": 0}
     st.dataframe(pd.DataFrame(mt_data).T, use_container_width=True)
     st.info("⚠️ **Disclaimer:** This tool is for educational purposes only. Past performance does not guarantee future results. Always test thoroughly before real trading.")
 
