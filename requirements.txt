@@ -3,4 +3,3 @@ pandas>=2.2
 numpy>=1.26
 requests>=2.32
 pytz>=2024.1
-add requirements
